@@ -13,7 +13,8 @@ import java.sql.Connection;
 import javax.swing.JOptionPane;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-
+import java.sql.SQLException;
+import java.util.List;
 
 public class ProdutosDAO {
     
@@ -23,17 +24,18 @@ public class ProdutosDAO {
     ArrayList<ProdutosDTO> listagem = new ArrayList<>();
     
     public void cadastrarProduto (ProdutosDTO produto){
-      try{
-          conn = new conectaDAO().connectDB();
-          String sql = "INSEERT INTO produtos (nome, valor , status) VALUES(?,?,?)";
-          prep = conn.prepareStatement(sql);
+      String sql = "INSERT INTO produtos (nome, valor , status) VALUES(?,?,?)";
+        try(Connection conn = new conectaDAO() . connectDB();
+              PreparedStatement prep = conn.prepareStatement(sql)){
+          
           prep.setString(1,produto.getNome());
           prep.setInt(2,produto.getValor());
           prep.setString(3,produto.getStatus());
           prep.executeUpdate();
+          
           JOptionPane.showMessageDialog(null,"Produto cadastro com sucesso!");
           
-      }  catch(Exception e){
+      }  catch(SQLException e){
           JOptionPane.showMessageDialog(null,"Erro ao cadastrar o produto:" + e.getMessage());
       }
         
@@ -61,8 +63,42 @@ public class ProdutosDAO {
         return lista;
     }
     
-    
-    
+    public void venderProduto(int idProduto){
         
+        String sql = "UPDATE produtos SET status = 'Vendido' WHERE id = ?";
+        
+        try(Connection conn  = new conectaDAO().connectDB();
+              PreparedStatement stmt = conn.prepareStatement(sql)){
+            
+            stmt.setInt(1, idProduto);
+            stmt.executeUpdate();
+            
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        
+    }
+    
+        public List<ProdutosDTO> listarProdutosVendidos(){
+            List<ProdutosDTO> lista = new ArrayList<>();
+            String sql = "SELECT * FROM produtos WHERE status = 'Vendido'";
+            
+            try(Connection conn = new conectaDAO().connectDB();
+                    PreparedStatement stmt = conn.prepareStatement(sql);
+                    ResultSet rs = stmt.executeQuery()){
+                
+                while (rs.next()){
+                    ProdutosDTO p =new ProdutosDTO();
+                    p.setId(rs.getInt("id"));
+                    p.setNome(rs.getString("nome"));
+                    p.setValor(rs.getInt("valor"));
+                    p.setStatus(rs.getString("status"));
+                    lista.add(p);
+                   }
+            }catch (SQLException e){
+                e.printStackTrace();
+            }
+            return lista;
+        }
 }
 
